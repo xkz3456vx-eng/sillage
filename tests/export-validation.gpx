@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Sillage 1.0" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 https://www.topografix.com/GPX/1/1/gpx.xsd">
+<metadata><name>Été &amp; &lt;test&gt;</name><time>2026-09-29T21:25:41.714Z</time></metadata>
+<wpt lat="45.0100000" lon="6.0000000"><name>Fin du jour 1</name><sym>Flag, Red</sym></wpt>
+<wpt lat="45.0000000" lon="6.0000000"><name>Eau</name><sym>Drinking Water</sym></wpt>
+<trk><name>Été &amp; &lt;test&gt;</name><type>Randonnée pédestre</type><trkseg>
+<trkpt lat="45.0000000" lon="6.0000000"><ele>100.0</ele></trkpt>
+<trkpt lat="45.0100000" lon="6.0000000"></trkpt>
+</trkseg><trkseg>
+<trkpt lat="46.0000000" lon="6.0000000"><ele>120.0</ele></trkpt>
+<trkpt lat="46.0100000" lon="6.0000000"><ele>125.0</ele></trkpt>
+</trkseg></trk></gpx>

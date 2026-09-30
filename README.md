@@ -163,4 +163,3 @@ Proxy facultatif de mutualisation des quotas et en-tête User-Agent serveur ; fo
 ## Licence et provenance
 
 Code de l’application et SVG originaux : MIT, voir `LICENSE`. Les bibliothèques et profils conservent leurs auteurs et licences, voir `THIRD_PARTY.md` et les fichiers de licence voisins. Les fonds de carte ne sont pas des illustrations propriétaires intégrées au projet : ils sont servis à la demande avec leurs attributions. Aucun logo ni pictogramme de marque tiers n’est employé dans l’interface.
-

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#163c39"><meta name="description" content="Sillage, votre atelier d’itinéraires vélo et randonnée. Planifiez, explorez les points d’intérêt et exportez en GPX.">
+  <title>Sillage — L’atelier des itinéraires</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="vendor/leaflet.elevation.css">
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/responsive.css">
+  <script defer src="vendor/leaflet.js"></script><script defer src="vendor/leaflet.draw.js"></script>
+  <script defer src="vendor/d3.min.js"></script><script defer src="vendor/leaflet.elevation.js"></script>
+  <script defer src="js/config.js"></script><script defer src="js/icons.js"></script><script defer src="js/utils.js"></script>
+  <script defer src="js/profile-sources.js"></script><script defer src="js/profiles.js"></script><script defer src="js/storage.js"></script>
+  <script defer src="js/routing.js"></script><script defer src="js/poi.js"></script><script defer src="js/geocoding.js"></script>
+  <script defer src="js/gpx.js"></script><script defer src="js/elevation.js"></script><script defer src="js/map.js"></script>
+  <script defer src="js/ui.js"></script><script defer src="js/app.js"></script>
+</head>
+<body>
+  <a href="#route-name" class="skip-link">Aller au carnet de parcours</a>
+  <header class="topbar">
+    <button id="panel-toggle" class="icon-button mobile-only" aria-label="Afficher le carnet" aria-expanded="false" data-icon="menu"></button>
+    <a class="brand" href="./" aria-label="Sillage, accueil"><img src="assets/logo.svg" alt="" width="37" height="37"><span>sillage<span class="brand-dot">.</span></span></a>
+    <span class="brand-caption">L’ATELIER DES ITINÉRAIRES</span>
+    <nav class="toolbar" aria-label="Outils du parcours">
+      <button id="new-route" title="Créer un nouveau parcours" data-icon="new"><span>Nouveau</span></button>
+      <button id="import-file" title="Importer un GPX ou un projet JSON" data-icon="import"><span>Importer</span></button>
+      <button id="save-project" title="Enregistrer une copie nommée dans ce navigateur" data-icon="save"><span>Enregistrer</span></button>
+      <button id="export-open" class="primary" title="Exporter le parcours" data-icon="export"><span>Exporter</span></button>
+      <button id="theme-toggle" class="icon-button" title="Changer de thème" aria-label="Changer de thème" data-icon="theme"></button>
+      <button id="settings-open" class="icon-button" title="Paramètres" aria-label="Paramètres" data-icon="settings"></button>
+    </nav>
+  </header>
+  <main class="workspace">
+    <aside id="sidebar" class="sidebar" aria-label="Carnet de parcours">
+      <div class="side-heading"><span class="eyebrow">VOTRE PROCHAINE SORTIE</span><span id="save-state" class="save-state">Brouillon local</span></div>
+      <input id="route-name" class="route-title" maxlength="100" value="Mon prochain départ" aria-label="Nom du parcours">
+      <button id="profile-open" class="profile-pill" title="Changer d’activité et adapter les préférences"><span id="current-profile">Choisir une activité</span><span>Modifier</span></button>
+      <nav class="tabs" aria-label="Panneaux"><button class="active" data-tab="route" aria-pressed="true">Parcours</button><button data-tab="poi" aria-pressed="false">À proximité</button><button data-tab="projects" aria-pressed="false">Mes sorties</button></nav>
+      <div class="side-scroll">
+        <section id="tab-route" class="tab-panel">
+          <div class="section-title"><h2>Vos points de passage</h2><span id="point-count" class="count">0</span></div>
+          <p class="muted small">Cliquez sur la carte pour dessiner votre itinéraire. Déplacez les points pour l’affiner.</p>
+          <ol id="waypoint-list" class="waypoints"></ol>
+          <div id="route-empty" class="empty-card"><svg class="empty-route" viewBox="0 0 170 64" aria-hidden="true"><path d="M16 46C40 46 29 15 60 15s28 35 55 35 27-28 39-28"/><circle cx="16" cy="46" r="5"/><circle cx="154" cy="22" r="5"/></svg><strong>Tout commence par un point.</strong><p>Un départ, une envie de détour…<br>la carte est à vous.</p></div>
+          <div class="button-row"><button id="reverse" data-icon="reverse" title="Inverser l’ordre de tous les points">Inverser</button><button id="loop" data-icon="loop" title="Revenir au départ par le réseau routable" aria-pressed="false">Boucle</button></div>
+          <button id="recalculate" class="subtle full" data-icon="refresh">Recalculer le parcours</button>
+          <button id="fit-route-side" class="subtle full mobile-only" data-icon="fit">Cadrer le parcours sur la carte</button>
+          <details class="preferences" open><summary>Préférences d’itinéraire</summary>
+            <label class="range-label" for="unpaved">Chemins non revêtus <output id="unpaved-out"></output></label><input id="unpaved" type="range" min="0" max="100" step="5" title="0 : fortement pénalisés. 100 : aucune pénalité supplémentaire. PMR conserve ses exclusions.">
+            <div class="range-ends"><span>Routes revêtues</span><span>Tous terrains</span></div>
+            <label class="range-label" for="traffic">Évitement du trafic <output id="traffic-out"></output></label><input id="traffic" type="range" min="0" max="2" step="1" title="Pénalise les routes principales ; aucune donnée de trafic en temps réel.">
+            <label class="range-label" for="climb">Dénivelé souhaité <output id="climb-out"></output></label><input id="climb" type="range" min="1" max="100" step="1" title="Objectif moyen de D+ en m/km. Influence le coût des montées et déclenche une alerte en cas de dépassement ; ce n’est pas une limite garantie.">
+            <label class="check"><input id="avoid-toll" type="checkbox" checked>Éviter les voies à péage</label>
+            <label class="range-label" for="speed">Vitesse moyenne <output id="speed-out"></output></label><input id="speed" type="range" min="1" max="40" step="0.5" title="Vitesse de déplacement hors pauses ; une correction liée au dénivelé s’ajoute au temps estimé.">
+          </details>
+          <details class="preferences"><summary>Étapes & zones à éviter</summary>
+            <label class="range-label" for="daily">Distance par jour <output id="daily-out"></output></label><input id="daily" type="range" min="5" max="200" step="5" title="Distance visée pour proposer les fins d’étapes. Un seul segment plus long peut dépasser ce seuil.">
+            <div class="button-row"><button id="auto-stages">Proposer les étapes</button><button id="stage-mode" aria-pressed="false">Placer une fin</button></div>
+            <p class="small muted">Cliquez sur la trace pour placer une fin d’étape. Les marqueurs peuvent être déplacés.</p><div id="stages-list"></div>
+            <button id="add-nogo" data-icon="exclude" class="full" title="Dessiner un cercle que le routage doit éviter">Dessiner une zone à éviter</button><div id="nogos-list"></div>
+          </details>
+        </section>
+        <section id="tab-poi" class="tab-panel" hidden>
+          <div class="section-title"><h2>Les bonnes haltes</h2><span id="poi-count" class="count">0</span></div>
+          <p class="muted small">Les services repérés autour de votre trace grâce à OpenStreetMap.</p>
+          <label class="range-label" for="poi-radius">Distance au parcours <output id="poi-radius-out"></output></label><input type="range" id="poi-radius" min="200" max="3000" step="100" value="700" title="Largeur du corridor de recherche de chaque côté du parcours">
+          <div id="poi-categories" class="poi-categories"></div>
+          <button id="poi-refresh" class="full" data-icon="refresh">Actualiser les services</button>
+          <p id="poi-status" role="status" class="small muted">Créez un parcours pour rechercher des services.</p>
+          <div id="poi-alerts" class="alerts"></div><div id="poi-list"></div><button id="poi-more" class="full" hidden>Afficher la suite</button>
+        </section>
+        <section id="tab-projects" class="tab-panel" hidden><div class="section-title"><h2>Mes sorties</h2><span class="tag">Sur cet appareil</span></div><p class="small muted">Vos parcours restent dans ce navigateur. Exportez un projet JSON pour les conserver ailleurs.</p><div id="projects-list"></div></section>
+      </div>
+      <footer class="side-footer"><span class="save-dot"></span><span>Vos détours vous appartiennent.</span><button id="help-open" aria-label="Aide" title="Aide et crédits">?</button></footer>
+    </aside>
+    <section class="map-workspace" aria-label="Carte et statistiques">
+      <div id="map" aria-label="Carte interactive" tabindex="0"></div>
+      <form id="search-form" class="search-box" role="search"><svg class="icon" aria-hidden="true"><use href="#search"></use></svg><input id="search-input" type="search" maxlength="180" autocomplete="off" placeholder="Un lieu, une adresse, un départ…" aria-label="Rechercher un lieu" aria-controls="search-results"><button type="submit" title="Lancer la recherche">Rechercher</button><div id="search-results" class="search-results" hidden></div></form>
+      <div class="map-actions"><select id="basemap" aria-label="Fond de carte"><option value="osm">Carte standard</option><option value="topo">Topographique</option><option value="satellite">Satellite</option></select><button id="fit-route" class="icon-button" data-icon="fit" aria-label="Cadrer le parcours" title="Cadrer le parcours"></button><button id="locate" class="icon-button" data-icon="locate" aria-label="Ma position" title="Centrer sur ma position"></button></div>
+      <div id="map-hint" class="map-hint"><span class="hint-cross">＋</span> Cliquez sur la carte pour placer votre départ</div>
+      <div id="busy" class="busy" role="status" hidden><span class="spinner"></span><span id="busy-text">Calcul du parcours…</span><button id="cancel-routing">Annuler</button></div>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden><span id="notice-text"></span><button id="notice-close" aria-label="Fermer le message">×</button></div>
+      <div id="stats-card" class="stats-card">
+        <div class="stats-heading"><span class="eyebrow">LE PARCOURS EN UN COUP D’ŒIL</span><span id="difficulty" class="tag">À dessiner</span><button id="elevation-toggle" title="Afficher ou masquer l’altimétrie" aria-expanded="true">Altimétrie <span>⌃</span></button></div>
+        <div class="stats-grid"><div><strong id="stat-distance">—</strong><span>Distance</span></div><div><strong id="stat-ascent">—</strong><span>Dénivelé +</span></div><div><strong id="stat-descent">—</strong><span>Dénivelé −</span></div><div><strong id="stat-time">—</strong><span>Temps estimé</span></div></div>
+        <div class="surface-bar" id="surface-bar" aria-label="Répartition des surfaces"></div>
+        <div class="surface-legend"><span><i class="road"></i>Route <b id="surface-road">—</b></span><span><i class="gravel"></i>Chemin <b id="surface-gravel">—</b></span><span><i class="trail"></i>Sentier <b id="surface-trail">—</b></span><span><i class="unknown"></i>Inconnu <b id="surface-unknown">—</b></span></div>
+        <div id="elevation-wrap"><div class="elevation-title"><span>Profil altimétrique</span><span id="elevation-range">L’altitude suivra votre itinéraire</span></div><div id="elevation-chart" tabindex="0" aria-label="Profil altimétrique. Flèches gauche et droite pour parcourir la trace."><div class="chart-empty">Dessinez un parcours pour explorer son relief</div></div><p id="elevation-cursor" class="chart-caption">Survolez le profil pour vous repérer sur la carte.</p></div>
+      </div>
+    </section>
+  </main>
+  <dialog id="profile-dialog" aria-labelledby="profile-heading"><div class="dialog-top"><span class="eyebrow">À CHACUN SON SILLAGE</span><button class="dialog-close icon-button" aria-label="Fermer">×</button></div><h1 id="profile-heading">Comment partez-vous ?</h1><p class="muted">Choisissez votre activité. Le parcours et les haltes s’adaptent à vous.</p><div id="profile-grid" class="profile-grid"></div><p class="small muted">Vous pourrez changer d’activité et ajuster chaque préférence à tout moment.</p></dialog>
+  <dialog id="settings-dialog" aria-labelledby="settings-heading"><div class="dialog-top"><h2 id="settings-heading">Vos paramètres</h2><button class="dialog-close icon-button" aria-label="Fermer">×</button></div><form id="settings-form" class="settings-form">
+    <label>Unités<select name="units"><option value="metric">Kilomètres / mètres</option><option value="imperial">Miles / pieds</option></select></label>
+    <label>Apparence<select name="theme"><option value="light">Thème clair</option><option value="dark">Thème sombre</option></select></label>
+    <details open><summary>Instances de services</summary><p class="small muted">Les services reçoivent les coordonnées recherchées. Les instances personnelles doivent autoriser les requêtes CORS de ce site.</p><label>BRouter — calcul<input type="url" name="brouter" required></label><label>BRouter — envoi des profils .brf<input type="url" name="profileUpload" required></label><label>Overpass — principal<input type="url" name="overpass" required></label><label>Overpass — miroir<input type="url" name="overpassMirror" required></label><label>Nominatim — recherche<input type="url" name="nominatim" required></label><label>Contact de l’exploitant (facultatif)<input type="email" name="contact"></label><label class="check"><input name="autocomplete" type="checkbox">Autocomplétion réseau autorisée par mon instance</label><p class="small muted">Désactivée obligatoirement sur nominatim.openstreetmap.org. Les suggestions de votre historique restent disponibles.</p></details>
+    <button type="submit" class="primary full">Enregistrer les paramètres</button>
+  </form></dialog>
+  <dialog id="export-dialog" aria-labelledby="export-heading"><div class="dialog-top"><h2 id="export-heading">Emporter votre itinéraire</h2><button class="dialog-close icon-button" aria-label="Fermer">×</button></div><p class="muted">La trace complète et vos haltes sélectionnées vous accompagnent.</p><div class="export-options"><button id="export-gpx" data-icon="export"><strong>Trace GPX 1.1</strong><span>GPS, montre et applications de navigation</span></button><button id="export-json" data-icon="save"><strong>Projet Sillage</strong><span>Trace, réglages, points et étapes en JSON</span></button><button id="export-share" data-icon="share"><strong>Lien de partage</strong><span>Points de routage et préférences, sans compte</span></button><button id="export-brf" data-icon="settings"><strong>Profil BRouter .brf</strong><span>Le profil exact utilisé pour ce parcours</span></button></div><label id="share-wrap" hidden>Lien à copier<input id="share-url" readonly><button id="copy-share">Copier le lien</button></label><p id="export-note" class="small muted"></p></dialog>
+  <dialog id="help-dialog" aria-labelledby="help-heading"><div class="dialog-top"><h2 id="help-heading">Prendre un bon départ</h2><button class="dialog-close icon-button" aria-label="Fermer">×</button></div><ol class="help-steps"><li>Choisissez votre activité, puis cliquez sur la carte pour placer au moins deux points.</li><li>Déplacez les repères ou réordonnez la liste. Un clic droit supprime un point.</li><li>Explorez « À proximité » et ajoutez vos haltes. Marquez les fins de journée dans les préférences.</li><li>Exportez le GPX pour naviguer et le JSON pour conserver une copie complète du projet.</li></ol><p>Les cartes, itinéraires et services nécessitent Internet. Un parcours importé ou sauvegardé reste consultable hors connexion, sans les fonds de carte manquants.</p><p>L’accessibilité PMR, la potabilité, les horaires et les passages restent à vérifier sur place. Les données OSM peuvent être incomplètes.</p><p class="small">Cartographie © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (ODbL). Calcul <a href="https://brouter.de" target="_blank" rel="noopener">BRouter</a>. <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">Conditions Nominatim</a>. Bibliothèques et licences : voir README et THIRD_PARTY.md.</p></dialog>
+  <input id="file-input" type="file" accept=".gpx,.json,application/gpx+xml,application/json" hidden>
+  <noscript><div class="fatal">Activez JavaScript pour utiliser Sillage.</div></noscript>
+</body>
+</html>
